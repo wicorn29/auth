@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Authenticator App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        /* Basic Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #f0f2f5, #e0e6ec);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #007bff;
+            margin-bottom: 30px;
+            font-weight: 700;
+            font-size: 2.2em;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 25px;
+            font-weight: 600;
+            font-size: 1.5em;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        h2:first-of-type {
+            margin-top: 0;
+        }
+
+
+        .add-account-section, .codes-section, .backup-restore-section {
+            margin-bottom: 30px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 25px;
+            border: 1px solid #eee;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        input[type="text"]:focus, input[type="file"]:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+        }
+
+        small {
+            display: block;
+            margin-top: 5px;
+            color: #777;
+            font-size: 0.85em;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-top: 10px; /* Added margin for buttons */
+        }
+        /* Specific styles for backup/restore buttons */
+        .backup-restore-section button {
+            background-color: #28a745; /* Green for download */
+            margin-bottom: 10px;
+        }
+        .backup-restore-section button:hover {
+            background-color: #218838;
+        }
+        .backup-restore-section button.restore-btn {
+            background-color: #ffc107; /* Yellow for restore */
+            color: #333;
+        }
+        .backup-restore-section button.restore-btn:hover {
+            background-color: #e0a800;
+        }
+
+
+        button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .message {
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: red;
+            font-weight: 500;
+        }
+
+        .success-message {
+            color: green;
+        }
+        .warning-message {
+            color: orange;
+        }
+
+        /* Codes List */
+        #codesList {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .no-accounts-message {
+            color: #777;
+            font-style: italic;
+            margin-bottom: 20px;
+        }
+
+        .code-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .code-info {
+            text-align: left;
+            flex-grow: 1;
+        }
+
+        .account-name {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 5px;
+        }
+
+        .totp-code {
+            font-family: 'Share Tech Mono', monospace; /* Monospaced font for codes */
+            font-size: 2.2em;
+            font-weight: 700;
+            color: #007bff;
+            letter-spacing: 2px;
+            user-select: all; /* Allow easy selection of the code */
+            -webkit-user-select: all;
+            -moz-user-select: all;
+            cursor: text;
+        }
+
+        .delete-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            width: auto; /* Override general button width */
+        }
+
+        .delete-button:hover {
+            background-color: #c82333;
+            transform: none; /* No lift effect for small buttons */
+        }
+
+        .refresh-indicator {
+            margin-top: 25px;
+            font-size: 0.95em;
+            color: #666;
+        }
+
+        #countdown {
+            font-weight: 700;
+            color: #007bff;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+            margin-top: 10px;
+            margin-bottom: 15px; /* Spacing below the file input */
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .file-input-wrapper button {
+            background-color: #ffc107; /* Yellow for restore */
+            color: #333;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%; /* Make button span full width */
+            margin-top: 0; /* Reset margin */
+        }
+
+        .file-input-wrapper button:hover {
+            background-color: #e0a800;
+            transform: translateY(-2px);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Web Authenticator</h1>
+
+        <div class="add-account-section">
+            <h2>Add New Account</h2>
+            <div class="form-group">
+                <label for="accountName">Account Name:</label>
+                <input type="text" id="accountName" placeholder="e.g., Google, GitHub">
+            </div>
+            <div class="form-group">
+                <label for="secretKey">Secret Key (Base32):</label>
+                <input type="text" id="secretKey" placeholder="e.g., JBSWY3DPEHPK3PXP">
+                <small>Often found when setting up 2FA, e.g., "Manual Entry" or "Enter key manually".</small>
+            </div>
+            <button id="addAccountButton">Add Account</button>
+            <p id="addAccountMessage" class="message"></p>
+        </div>
+
+        <div class="codes-section">
+            <h2>Your Codes</h2>
+            <div id="codesList">
+                <p class="no-accounts-message">No accounts added yet. Add one above!</p>
+            </div>
+            <div class="refresh-indicator">
+                Next refresh in: <span id="countdown">30</span> seconds
+            </div>
+        </div>
+
+        <div class="backup-restore-section">
+            <h2>Backup & Restore</h2>
+            <button id="downloadBackupButton">Download Accounts (.auth)</button>
+            <small style="margin-bottom:15px; display:block;">Download this file to backup your accounts. Keep it safe!</small>
+
+            <div class="file-input-wrapper">
+                <input type="file" id="restoreFileInput" accept=".auth">
+                <button type="button">Restore Accounts from File</button>
+            </div>
+            <small>Select your previously downloaded .auth file to restore accounts. This will <strong>overwrite</strong> current accounts.</small>
+            <p id="backupRestoreMessage" class="message"></p>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/otpauth/9.3.6/otpauth.umd.min.js"></script>
+    <script>
+        // WARNING: Storing secret keys in localStorage is NOT secure for production applications.
+        // This is for demonstration and learning purposes only.
+        // Sensitive data should ALWAYS be handled on a secure backend.
+
+        const accountNameInput = document.getElementById('accountName');
+        const secretKeyInput = document.getElementById('secretKey');
+        const addAccountButton = document.getElementById('addAccountButton');
+        const addAccountMessage = document.getElementById('addAccountMessage');
+        const codesList = document.getElementById('codesList');
+        const countdownSpan = document.getElementById('countdown');
+
+        // New elements for Backup/Restore
+        const downloadBackupButton = document.getElementById('downloadBackupButton');
+        const restoreFileInput = document.getElementById('restoreFileInput');
+        const backupRestoreMessage = document.getElementById('backupRestoreMessage');
+
+
+        const STORAGE_KEY = 'authenticatorAccounts';
+        let accounts = [];
+        let intervalId; // To store the setInterval ID for clearing
+
+        // --- Helper Functions ---
+
+        // Load accounts from Local Storage
+        function loadAccounts() {
+            const storedAccounts = localStorage.getItem(STORAGE_KEY);
+            if (storedAccounts) {
+                try {
+                    const parsedAccounts = JSON.parse(storedAccounts);
+                    // Validate parsedAccounts structure before mapping
+                    if (!Array.isArray(parsedAccounts)) {
+                        throw new Error("Stored data is not an array.");
+                    }
+                    accounts = parsedAccounts.map(acc => {
+                        if (typeof acc.name !== 'string' || typeof acc.secret !== 'string') {
+                            throw new Error("Invalid account structure in stored data.");
+                        }
+                        return {
+                            name: acc.name,
+                            secret: acc.secret, // Raw base32 string
+                            otp: new OTPAuth.TOTP({ secret: acc.secret })
+                        };
+                    });
+                } catch (e) {
+                    console.error("Error parsing stored accounts, clearing storage:", e);
+                    accounts = [];
+                    localStorage.removeItem(STORAGE_KEY); // Clear potentially corrupt data
+                    displayMessage(backupRestoreMessage, 'Corrupt saved data found and cleared. Please re-add accounts or restore from backup.', false);
+                }
+            }
+        }
+
+        // Save accounts to Local Storage
+        function saveAccounts() {
+            // Only store the name and the raw secret string, not the OTPAuth object
+            const accountsToSave = accounts.map(acc => ({
+                name: acc.name,
+                secret: acc.secret
+            }));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(accountsToSave));
+        }
+
+        // Display message to the user
+        function displayMessage(element, msg, isSuccess = false, isWarning = false) {
+            element.textContent = msg;
+            if (isSuccess) {
+                element.className = 'message success-message';
+            } else if (isWarning) {
+                element.className = 'message warning-message';
+            } else {
+                element.className = 'message'; // Red for error by default
+            }
+            setTimeout(() => {
+                element.textContent = '';
+                element.className = 'message';
+            }, 5000); // Clear message after 5 seconds
+        }
+
+        // --- TOTP Generation & UI Rendering ---
+
+        function generateAndDisplayCodes() {
+            codesList.innerHTML = ''; // Clear existing codes
+
+            if (accounts.length === 0) {
+                codesList.innerHTML = '<p class="no-accounts-message">No accounts added yet. Add one above!</p>';
+                return;
+            }
+
+            accounts.forEach((account, index) => {
+                let token;
+                try {
+                    // Generate the TOTP token for the current account
+                    token = account.otp.generate();
+                } catch (e) {
+                    console.error(`Error generating token for ${account.name}:`, e);
+                    token = 'ERROR'; // Indicate error
+                }
+
+                const codeItem = document.createElement('div');
+                codeItem.className = 'code-item';
+                codeItem.innerHTML = `
+                    <div class="code-info">
+                        <div class="account-name">${account.name}</div>
+                        <div class="totp-code">${token.padStart(6, '0')}</div>
+                    </div>
+                    <button class="delete-button" data-index="${index}">Delete</button>
+                `;
+                codesList.appendChild(codeItem);
+            });
+
+            addDeleteListeners(); // Re-attach listeners after rendering
+        }
+
+        function addDeleteListeners() {
+            document.querySelectorAll('.delete-button').forEach(button => {
+                button.onclick = (event) => {
+                    const index = parseInt(event.target.dataset.index);
+                    deleteAccount(index);
+                };
+            });
+        }
+
+        function updateCountdown() {
+            const epoch = Math.floor(Date.now() / 1000); // Current Unix timestamp in seconds
+            const step = 30; // TOTP time step, usually 30 seconds
+            const timeUntilNextStep = step - (epoch % step);
+
+            countdownSpan.textContent = timeUntilNextStep;
+
+            if (timeUntilNextStep === step) { // Exactly at the beginning of a new 30-sec window
+                generateAndDisplayCodes(); // Regenerate codes
+            }
+        }
+
+        // --- Event Handlers ---
+
+        addAccountButton.addEventListener('click', () => {
+            const name = accountNameInput.value.trim();
+            const secret = secretKeyInput.value.trim().toUpperCase().replace(/ /g, ''); // Remove spaces and uppercase
+
+            if (!name || !secret) {
+                displayMessage(addAccountMessage, 'Account Name and Secret Key cannot be empty.');
+                return;
+            }
+
+            // Basic validation for Base32 format (contains A-Z, 2-7, optionally padding '=')
+            const base32Regex = /^[A-Z2-7]+=*$/;
+            if (!base32Regex.test(secret)) {
+                displayMessage(addAccountMessage, 'Secret Key must be in Base32 format (A-Z, 2-7, optional "=" padding).');
+                return;
+            }
+
+            try {
+                // Attempt to create an OTPAuth.TOTP object to validate the secret
+                const otpInstance = new OTPAuth.TOTP({ secret: secret });
+                // Generate a test token to ensure it works
+                otpInstance.generate();
+
+                // Check for duplicate secret keys (optional, but good practice)
+                const isDuplicate = accounts.some(acc => acc.secret === secret);
+                if (isDuplicate) {
+                    displayMessage(addAccountMessage, 'This secret key is already added.', false, true); // Warning, not error
+                    return;
+                }
+
+                accounts.push({ name: name, secret: secret, otp: otpInstance });
+                saveAccounts();
+                displayMessage(addAccountMessage, 'Account added successfully!', true);
+                accountNameInput.value = '';
+                secretKeyInput.value = '';
+                generateAndDisplayCodes(); // Refresh display
+            } catch (e) {
+                displayMessage(addAccountMessage, `Error adding account: Invalid secret key or format. (${e.message})`);
+                console.error("Error creating OTPAuth instance:", e);
+            }
+        });
+
+        function deleteAccount(index) {
+            if (confirm(`Are you sure you want to delete account "${accounts[index].name}"? This cannot be undone unless you have a backup.`)) {
+                accounts.splice(index, 1);
+                saveAccounts();
+                generateAndDisplayCodes(); // Refresh display
+                displayMessage(backupRestoreMessage, 'Account deleted successfully.', true);
+            }
+        }
+
+        // --- Backup/Restore Functions ---
+
+        downloadBackupButton.addEventListener('click', () => {
+            const accountsToBackup = accounts.map(acc => ({ name: acc.name, secret: acc.secret }));
+            const dataStr = JSON.stringify(accountsToBackup, null, 2); // Pretty print JSON
+
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `authenticator_backup_${new Date().toISOString().slice(0,10)}.auth`; // e.g., authenticator_backup_2023-10-27.auth
+            document.body.appendChild(a); // Required for Firefox
+            a.click();
+            document.body.removeChild(a); // Clean up
+            URL.revokeObjectURL(url); // Release memory
+
+            displayMessage(backupRestoreMessage, 'Accounts downloaded successfully!', true);
+        });
+
+        restoreFileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+                displayMessage(backupRestoreMessage, 'No file selected.');
+                return;
+            }
+
+            if (file.name.split('.').pop().toLowerCase() !== 'auth') {
+                displayMessage(backupRestoreMessage, 'Please select a .auth file.', false);
+                return;
+            }
+
+            if (!confirm('Restoring will OVERWRITE all your current accounts. Are you sure you want to continue?')) {
+                // Clear the file input if the user cancels
+                restoreFileInput.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const loadedData = JSON.parse(e.target.result);
+                    if (!Array.isArray(loadedData)) {
+                        throw new Error("Invalid file format: Data is not an array.");
+                    }
+
+                    const newAccounts = loadedData.map(acc => {
+                        if (typeof acc.name !== 'string' || typeof acc.secret !== 'string') {
+                            throw new Error("Invalid account structure in file.");
+                        }
+                        // Validate secret format for each loaded account
+                        const base32Regex = /^[A-Z2-7]+=*$/;
+                        if (!base32Regex.test(acc.secret)) {
+                            throw new Error(`Invalid Base32 secret for account: ${acc.name}`);
+                        }
+                        return {
+                            name: acc.name,
+                            secret: acc.secret,
+                            otp: new OTPAuth.TOTP({ secret: acc.secret })
+                        };
+                    });
+
+                    accounts = newAccounts; // Replace current accounts
+                    saveAccounts(); // Save to local storage
+                    generateAndDisplayCodes(); // Update UI
+                    displayMessage(backupRestoreMessage, 'Accounts restored successfully!', true);
+
+                } catch (error) {
+                    displayMessage(backupRestoreMessage, `Error restoring file: ${error.message}`, false);
+                    console.error("Restore error:", error);
+                } finally {
+                    // Always clear the file input after processing or error
+                    restoreFileInput.value = '';
+                }
+            };
+            reader.onerror = () => {
+                displayMessage(backupRestoreMessage, 'Failed to read file.', false);
+                restoreFileInput.value = '';
+            };
+            reader.readAsText(file);
+        });
+
+
+        // --- Initialization ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAccounts(); // Load existing accounts
+            generateAndDisplayCodes(); // Display codes for loaded accounts
+            updateCountdown(); // Set initial countdown
+            intervalId = setInterval(updateCountdown, 1000); // Update every second
+        });
+    </script>
+</body>
+</html>
